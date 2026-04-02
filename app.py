@@ -17,24 +17,6 @@ st.markdown("""
     margin-bottom: 12px;
 }
 
-.stat-card {
-    background: linear-gradient(135deg, #1f7a6b, #145c52);
-    color: white;
-    padding: 18px;
-    border-radius: 14px;
-    text-align: center;
-}
-
-.stat-value {
-    font-size: 28px;
-    font-weight: 800;
-}
-
-.stat-label {
-    font-size: 13px;
-    opacity: 0.8;
-}
-
 .highlight { border-left: 6px solid #1f7a6b; }
 
 .title { font-size: 18px; font-weight: 600; color: var(--text-color); }
@@ -47,6 +29,13 @@ st.markdown("""
     font-size: 36px;
     font-weight: 800;
     color: var(--text-color);
+}
+
+.partner-title {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 30px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -78,73 +67,21 @@ df = df.sort_values(by="Start_DateTime")
 # ---------- STATS ----------
 total_matches = len(df)
 
-players = pd.concat([
-    df.get('Player 1', pd.Series()),
-    df.get('Player 2', pd.Series()),
-    df.get('Player 3', pd.Series()),
-    df.get('Player 4', pd.Series())
-]).dropna().unique()
+team1 = df[['Player 1', 'Player 2']].astype(str).apply(lambda x: " & ".join(sorted(x)), axis=1)
+team2 = df[['Player 3', 'Player 4']].astype(str).apply(lambda x: " & ".join(sorted(x)), axis=1)
 
-total_players = len(players)
-total_teams = total_matches * 2
-
-# duration
-df['duration'] = pd.to_datetime(df['End Time'], errors='coerce') - pd.to_datetime(df['Start Time'], errors='coerce')
-total_minutes = int(df['duration'].dt.total_seconds().sum() / 60) if 'duration' in df else 0
-
-total_courts = df['Court No'].nunique()
+total_teams = len(pd.concat([team1, team2]).dropna().unique())
 
 st.subheader("📊 Tournament Stats")
-
-c1, c2, c3, c4, c5 = st.columns(5)
-
-stats = [
-    ("Matches", total_matches),
-    ("Players", total_players),
-    ("Teams", total_teams),
-    ("Minutes", total_minutes),
-    ("Courts", total_courts)
-]
-
-for col, (label, value) in zip([c1,c2,c3,c4,c5], stats):
-    with col:
-        st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-value">{value}</div>
-            <div class="stat-label">{label}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# ---------- FILTERS ----------
-st.sidebar.header("Filters")
-
-player = st.sidebar.text_input("Search Player")
-category = st.sidebar.multiselect("Category", df['Category'].dropna().unique())
-venue = st.sidebar.multiselect("Venue", df['Venue'].dropna().unique())
-
-filtered = df.copy()
-
-if player:
-    player = player.lower()
-    filtered = filtered[
-        filtered['Match Details'].astype(str).str.lower().str.contains(player, na=False) |
-        filtered.get('Player 1','').astype(str).str.lower().str.contains(player, na=False) |
-        filtered.get('Player 2','').astype(str).str.lower().str.contains(player, na=False) |
-        filtered.get('Player 3','').astype(str).str.lower().str.contains(player, na=False) |
-        filtered.get('Player 4','').astype(str).str.lower().str.contains(player, na=False)
-    ]
-
-if category:
-    filtered = filtered[filtered['Category'].isin(category)]
-
-if venue:
-    filtered = filtered[filtered['Venue'].isin(venue)]
+c1, c2 = st.columns(2)
+c1.metric("Matches", total_matches)
+c2.metric("Teams", total_teams)
 
 # ---------- UPCOMING ----------
 st.subheader("🔥 Top 5 Upcoming Matches")
 
 now = datetime.now()
-upcoming = filtered[filtered['Start_DateTime'] >= now].head(5)
+upcoming = df[df['Start_DateTime'] >= now].head(5)
 
 for _, row in upcoming.iterrows():
     score_display = ""
@@ -161,3 +98,11 @@ for _, row in upcoming.iterrows():
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+# ---------- PARTNERS ----------
+st.markdown("<div class='partner-title'>🤝 Our Esteemed Partners</div>", unsafe_allow_html=True)
+
+if os.path.exists("partners.png"):
+    st.image("partners.png", use_container_width=True)
+else:
+    st.info("Upload partners.png in repo to display partner logos")

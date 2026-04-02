@@ -30,13 +30,6 @@ st.markdown("""
     font-weight: 800;
     color: var(--text-color);
 }
-
-.partner-title {
-    font-size: 24px;
-    font-weight: 700;
-    text-align: center;
-    margin-top: 30px;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -51,11 +44,14 @@ with col2:
 
 # ---------- LOAD ----------
 df = load_data()
+
+# Clean text safely
 df = df.apply(lambda col: col.map(lambda x: x.strip() if isinstance(x, str) else x))
 
-for col in ['Team 1 Score','Team 2 Score']:
+# Ensure required columns exist safely
+for col in ['Player 1','Player 2','Player 3','Player 4','Team 1 Score','Team 2 Score']:
     if col not in df.columns:
-        df[col] = ""
+        df[col] = None
 
 df['Start_DateTime'] = pd.to_datetime(
     df['Date'].astype(str) + " " + df['Start Time'].astype(str),
@@ -64,17 +60,22 @@ df['Start_DateTime'] = pd.to_datetime(
 
 df = df.sort_values(by="Start_DateTime")
 
+# ---------- FIXED TEAM LOGIC ----------
+def create_team(col1, col2):
+    if pd.isna(col1) or pd.isna(col2):
+        return None
+    return " & ".join(sorted([str(col1), str(col2)]))
+
+team1 = df.apply(lambda row: create_team(row['Player 1'], row['Player 2']), axis=1)
+team2 = df.apply(lambda row: create_team(row['Player 3'], row['Player 4']), axis=1)
+
+all_teams = pd.concat([team1, team2]).dropna().unique()
+total_teams = len(all_teams)
+
 # ---------- STATS ----------
-total_matches = len(df)
-
-team1 = df[['Player 1', 'Player 2']].astype(str).apply(lambda x: " & ".join(sorted(x)), axis=1)
-team2 = df[['Player 3', 'Player 4']].astype(str).apply(lambda x: " & ".join(sorted(x)), axis=1)
-
-total_teams = len(pd.concat([team1, team2]).dropna().unique())
-
 st.subheader("📊 Tournament Stats")
 c1, c2 = st.columns(2)
-c1.metric("Matches", total_matches)
+c1.metric("Matches", len(df))
 c2.metric("Teams", total_teams)
 
 # ---------- UPCOMING ----------
@@ -85,7 +86,7 @@ upcoming = df[df['Start_DateTime'] >= now].head(5)
 
 for _, row in upcoming.iterrows():
     score_display = ""
-    if str(row['Team 1 Score']) != "" or str(row['Team 2 Score']) != "":
+    if pd.notna(row['Team 1 Score']) or pd.notna(row['Team 2 Score']):
         score_display = f"<div class='score'>{row['Team 1 Score']} - {row['Team 2 Score']}</div>"
 
     st.markdown(f"""
@@ -98,11 +99,3 @@ for _, row in upcoming.iterrows():
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-# ---------- PARTNERS ----------
-st.markdown("<div class='partner-title'>🤝 Our Esteemed Partners</div>", unsafe_allow_html=True)
-
-if os.path.exists("partners.png"):
-    st.image("partners.png", use_container_width=True)
-else:
-    st.info("Upload partners.png in repo to display partner logos")

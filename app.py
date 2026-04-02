@@ -1,66 +1,109 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 from data_loader import load_data
+import os
+import time
 
 st.set_page_config(page_title="Court Mafia 2.0", layout="wide")
 
-st.title("Court Mafia 2.0")
-st.caption("Leaderboard + Fixtures")
+# Auto refresh every 20 sec
+st.experimental_rerun if False else None
 
-schedule_df, score_df = load_data()
+st.markdown("""
+<style>
+.main { background-color: #f7f7f2; }
+.card {
+    background: white;
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.08);
+    margin-bottom: 10px;
+}
+.live { border-left: 6px solid #00c853; background-color: #f1fff5; }
+.completed { border-left: 6px solid #9e9e9e; background-color: #f5f5f5; }
+.highlight { border-left: 6px solid #1f7a6b; background-color: #eefaf6; }
+.title { font-size: 18px; font-weight: 600; }
+.subtitle { font-size: 13px; color: #555; }
+.score { font-size: 20px; font-weight: bold; margin-top:5px; }
+</style>
+""", unsafe_allow_html=True)
 
-schedule_df.columns = schedule_df.columns.str.strip()
-score_df.columns = score_df.columns.str.strip()
+col1, col2 = st.columns([1,5])
 
-# -------- CLEAN SCORECARD --------
-score_df = score_df.dropna(how='all')
+with col1:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=80)
 
-# try to find header row
-header_idx = None
-for i, row in score_df.iterrows():
-    if 'Category' in str(row.values):
-        header_idx = i
-        break
+with col2:
+    st.title("Court Mafia 2.0")
+    st.caption("Thane’s Defining Pickleball Tournament")
 
-if header_idx is not None:
-    score_df.columns = score_df.iloc[header_idx]
-    score_df = score_df.iloc[header_idx+1:]
-    score_df = score_df.dropna(how='all')
+df = load_data()
 
-# -------- LEADERBOARD --------
-st.subheader("🏆 Leaderboard")
+df['Start_DateTime'] = pd.to_datetime(df['Date'].astype(str) + " " + df['Start Time'].astype(str))
+df = df.sort_values(by="Start_DateTime")
 
-if 'Points' in score_df.columns:
-    score_df = score_df.sort_values(by='Points', ascending=False)
+st.sidebar.header("Filters")
 
-    for i, row in score_df.head(10).iterrows():
-        st.markdown(f"**#{i+1} {row.get('Teams','')}** — {row.get('Points','')}")
-else:
-    st.info("Scorecard format not detected")
+player = st.sidebar.text_input("Search Player")
+category = st.sidebar.multiselect("Category", df['Category'].dropna().unique())
+court = st.sidebar.multiselect("Court", df['Court No'].dropna().unique())
+venue = st.sidebar.multiselect("Venue", df['Venue'].dropna().unique())
 
-# -------- MY MATCHES --------
-player = st.text_input("🔍 Search Your Name")
+filtered = df.copy()
 
 if player:
-    st.subheader("🎯 My Matches")
-    my_df = schedule_df[
-        schedule_df[['Player 1','Player 2','Player 3','Player 4']].astype(str)
-        .apply(lambda x: x.str.contains(player, case=False, na=False))
-        .any(axis=1)
+    filtered = filtered[
+        filtered['Match Details'].astype(str).str.contains(player, case=False, na=False)
     ]
 
-    for _, row in my_df.iterrows():
-        st.write(f"{row['Match Details']} | {row['Start Time']}")
+if category:
+    filtered = filtered[filtered['Category'].isin(category)]
 
-# -------- SCHEDULE --------
-st.subheader("📅 Schedule")
+if court:
+    filtered = filtered[filtered['Court No'].isin(court)]
 
-for _, row in schedule_df.iterrows():
+if venue:
+    filtered = filtered[filtered['Venue'].isin(venue)]
+
+st.subheader("🔥 Top 5 Upcoming Matches")
+
+now = datetime.now()
+upcoming = filtered[filtered['Start_DateTime'] >= now].head(5)
+
+for _, row in upcoming.iterrows():
+    st.markdown(f"""
+    <div class="card highlight">
+        <div class="title">{row['Match Details']}</div>
+        <div class="subtitle">
+            {row['Date']} | {row['Start Time']} - {row['End Time']} <br>
+            Court {row['Court No']} | {row['Category']} | {row['Venue']}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.subheader("📅 Full Schedule")
+
+for _, row in filtered.iterrows():
+
     scoreA = row.get('Team 1 Score', "")
     scoreB = row.get('Team 2 Score', "")
 
-    st.write(
-        row['Match Details'],
-        "|", row['Start Time'],
-        "| Score:", scoreA, "-", scoreB
-    )
+    css_class = "card"
+
+    if pd.notna(scoreA) and pd.notna(scoreB):
+        css_class += " live"
+    else:
+        css_class += ""
+
+    st.markdown(f"""
+    <div class="{css_class}">
+        <div class="title">{row['Match Details']}</div>
+        <div class="subtitle">
+            {row['Date']} | {row['Start Time']} - {row['End Time']} <br>
+            Court {row['Court No']} | {row['Category']} | {row['Venue']}
+        </div>
+        <div class="score">{scoreA} - {scoreB}</div>
+    </div>
+    """, unsafe_allow_html=True)

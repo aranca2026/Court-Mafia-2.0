@@ -60,11 +60,31 @@ df['Start_DateTime'] = pd.to_datetime(
 
 df = df.sort_values(by="Start_DateTime")
 
+# ---------- FILTERS ----------
+st.sidebar.header("Filters")
+
+player = st.sidebar.text_input("Search Player")
+category = st.sidebar.multiselect("Category", df['Category'].dropna().unique())
+venue = st.sidebar.multiselect("Venue", df['Venue'].dropna().unique())
+
+filtered = df.copy()
+
+if player:
+    filtered = filtered[
+        filtered['Match Details'].astype(str).str.contains(player, case=False, na=False)
+    ]
+
+if category:
+    filtered = filtered[filtered['Category'].isin(category)]
+
+if venue:
+    filtered = filtered[filtered['Venue'].isin(venue)]
+
 # ---------- UPCOMING ----------
 st.subheader("🔥 Top 5 Upcoming Matches")
 
 now = datetime.now()
-upcoming = df[df['Start_DateTime'] >= now].head(5)
+upcoming = filtered[filtered['Start_DateTime'] >= now].head(5)
 
 for _, row in upcoming.iterrows():
     score_display = ""
@@ -85,7 +105,7 @@ for _, row in upcoming.iterrows():
 # ---------- FULL ----------
 st.subheader("📅 Full Schedule")
 
-for _, row in df.iterrows():
+for _, row in filtered.iterrows():
     score_display = ""
     if str(row['Team 1 Score']) != "" or str(row['Team 2 Score']) != "":
         score_display = f"<div class='score'>{row['Team 1 Score']} - {row['Team 2 Score']}</div>"

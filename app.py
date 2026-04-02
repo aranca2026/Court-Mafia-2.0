@@ -6,10 +6,9 @@ import os
 
 st.set_page_config(page_title="Court Mafia 2.0", layout="wide")
 
-# ---------- DARK MODE SAFE UI ----------
+# ---------- UI ----------
 st.markdown("""
 <style>
-/* Auto adapt text colors */
 .card {
     background-color: var(--secondary-background-color);
     padding: 16px;
@@ -54,8 +53,11 @@ with col2:
 
 # ---------- LOAD ----------
 df = load_data()
-df.columns = df.columns.str.strip()
 
+# Clean all text cells
+df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+
+# Ensure score columns exist
 for col in ['Team 1 Score','Team 2 Score']:
     if col not in df.columns:
         df[col] = ""
@@ -76,9 +78,16 @@ venue = st.sidebar.multiselect("Venue", df['Venue'].dropna().unique())
 
 filtered = df.copy()
 
+# FIXED PLAYER FILTER (checks all player columns)
 if player:
+    player = player.strip().lower()
+
     filtered = filtered[
-        filtered['Match Details'].astype(str).str.contains(player, case=False, na=False)
+        filtered['Match Details'].astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 1', '').astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 2', '').astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 3', '').astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 4', '').astype(str).str.lower().str.contains(player, na=False)
     ]
 
 if category:

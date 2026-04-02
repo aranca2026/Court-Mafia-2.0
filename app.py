@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from data_loader import load_data
+import os
 
 st.set_page_config(page_title="Court Mafia 2.0", layout="wide")
 
@@ -25,8 +26,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 col1, col2 = st.columns([1,5])
+
 with col1:
-    st.image("logo.png", width=80)
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=80)
+
 with col2:
     st.title("Court Mafia 2.0")
     st.caption("Thane’s Defining Pickleball Tournament")
@@ -45,7 +49,7 @@ filtered = df.copy()
 
 if player:
     filtered = filtered[
-        filtered['Match Details'].str.contains(player, case=False, na=False)
+        filtered['Match Details'].astype(str).str.contains(player, case=False, na=False)
     ]
 
 if category:
@@ -58,19 +62,23 @@ if venue:
     filtered = filtered[filtered['Venue'].isin(venue)]
 
 st.subheader("🔥 Top 5 Upcoming Matches")
+
 now = datetime.now()
 upcoming = filtered[filtered['Start_DateTime'] >= now].head(5)
 
-for _, row in upcoming.iterrows():
-    st.markdown(f"""
-    <div class="card highlight">
-        <div class="title">{row['Match Details']}</div>
-        <div class="subtitle">
-            {row['Date']} | {row['Start Time']} - {row['End Time']} <br>
-            Court {row['Court No']} | {row['Category']} | {row['Venue']}
+if upcoming.empty:
+    st.info("No upcoming matches")
+else:
+    for _, row in upcoming.iterrows():
+        st.markdown(f"""
+        <div class="card highlight">
+            <div class="title">{row['Match Details']}</div>
+            <div class="subtitle">
+                {row['Date']} | {row['Start Time']} - {row['End Time']} <br>
+                Court {row['Court No']} | {row['Category']} | {row['Venue']}
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 st.subheader("📅 Full Schedule")
 

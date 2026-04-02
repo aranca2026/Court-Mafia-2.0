@@ -7,22 +7,36 @@ st.set_page_config(page_title="Court Mafia 2.0", layout="wide")
 st.title("Court Mafia 2.0")
 st.caption("Leaderboard + Fixtures")
 
-# LOAD BOTH SHEETS FROM SAME FUNCTION
 schedule_df, score_df = load_data()
 
 schedule_df.columns = schedule_df.columns.str.strip()
 score_df.columns = score_df.columns.str.strip()
 
+# -------- CLEAN SCORECARD --------
+score_df = score_df.dropna(how='all')
+
+# try to find header row
+header_idx = None
+for i, row in score_df.iterrows():
+    if 'Category' in str(row.values):
+        header_idx = i
+        break
+
+if header_idx is not None:
+    score_df.columns = score_df.iloc[header_idx]
+    score_df = score_df.iloc[header_idx+1:]
+    score_df = score_df.dropna(how='all')
+
 # -------- LEADERBOARD --------
 st.subheader("🏆 Leaderboard")
 
-if not score_df.empty:
-    score_df = score_df.sort_values(by=score_df.columns[1], ascending=False)
+if 'Points' in score_df.columns:
+    score_df = score_df.sort_values(by='Points', ascending=False)
 
     for i, row in score_df.head(10).iterrows():
-        st.markdown(f"**#{i+1} {row[0]}** — {row[1]}")
+        st.markdown(f"**#{i+1} {row.get('Teams','')}** — {row.get('Points','')}")
 else:
-    st.info("Scorecard sheet empty")
+    st.info("Scorecard format not detected")
 
 # -------- MY MATCHES --------
 player = st.text_input("🔍 Search Your Name")

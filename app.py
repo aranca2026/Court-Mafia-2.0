@@ -6,13 +6,12 @@ import os
 
 st.set_page_config(page_title="Court Mafia 2.0", layout="wide")
 
-# ---------- UI ----------
+# ---------- DARK MODE SAFE UI ----------
 st.markdown("""
 <style>
-.main { background-color: #f7f7f2; }
-
+/* Auto adapt text colors */
 .card {
-    background: white;
+    background-color: var(--secondary-background-color);
     padding: 16px;
     border-radius: 14px;
     box-shadow: 0px 4px 10px rgba(0,0,0,0.08);
@@ -21,17 +20,26 @@ st.markdown("""
 
 .highlight {
     border-left: 6px solid #1f7a6b;
-    background-color: #eefaf6;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.subtitle {
+    font-size: 13px;
+    color: var(--text-color);
+    opacity: 0.7;
 }
 
 .score {
     font-size: 22px;
     font-weight: 700;
     margin-top: 6px;
+    color: var(--text-color);
 }
-
-.title { font-size: 18px; font-weight: 600; }
-.subtitle { font-size: 13px; color: #555; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -48,7 +56,6 @@ with col2:
 df = load_data()
 df.columns = df.columns.str.strip()
 
-# Ensure score columns exist
 for col in ['Team 1 Score','Team 2 Score']:
     if col not in df.columns:
         df[col] = ""

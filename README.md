@@ -1,1 +1,1 @@
-Upload and deploy. Logo optional.
+Live score enabled using Team 1 Score & Team 2 Score.

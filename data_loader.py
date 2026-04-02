@@ -4,6 +4,11 @@ import streamlit as st
 @st.cache_data(ttl=20)
 def load_data():
     sheet_id = "130OAkdOXSpFTk3vnvdww0of5hM8ABd4XdGfWT0F9PmA"
-    sheet_name = "Schedule"
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Schedule"
+    return pd.read_csv(url)
+
+@st.cache_data(ttl=20)
+def load_scorecard():
+    sheet_id = "130OAkdOXSpFTk3vnvdww0of5hM8ABd4XdGfWT0F9PmA"
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Scorecard"
     return pd.read_csv(url)

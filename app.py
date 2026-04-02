@@ -13,32 +13,48 @@ st.markdown("""
     background-color: var(--secondary-background-color);
     padding: 16px;
     border-radius: 14px;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.08);
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.10);
     margin-bottom: 12px;
 }
+
 .highlight { border-left: 6px solid #1f7a6b; }
+
 .title { font-size: 18px; font-weight: 600; color: var(--text-color); }
+
 .subtitle { font-size: 13px; color: var(--text-color); opacity: 0.7; }
-.score { font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--text-color); }
+
+.score { font-size: 24px; font-weight: 800; margin-top: 6px; color: var(--text-color); }
+
+.header-title {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text-color);
+}
+
+.tagline {
+    font-size: 14px;
+    color: var(--text-color);
+    opacity: 0.6;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------- HEADER ----------
 col1, col2 = st.columns([1,5])
+
 with col1:
     if os.path.exists("logo.png"):
-        st.image("logo.png", width=80)
+        st.image("logo.png", width=90)
+
 with col2:
-    st.title("Court Mafia 2.0")
-    st.caption("Thane’s Defining Pickleball Tournament")
+    st.markdown("<div class='header-title'>🏆 Court Mafia 2.0 🏆</div>", unsafe_allow_html=True)
+    st.markdown("<div class='tagline'>Thane’s Defining Pickleball Tournament</div>", unsafe_allow_html=True)
 
 # ---------- LOAD ----------
 df = load_data()
 
-# FIX: replace deprecated applymap
 df = df.apply(lambda col: col.map(lambda x: x.strip() if isinstance(x, str) else x))
 
-# Ensure columns exist
 for col in ['Team 1 Score','Team 2 Score']:
     if col not in df.columns:
         df[col] = ""

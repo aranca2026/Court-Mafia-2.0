@@ -1,16 +1,16 @@
 import streamlit as st
 import pandas as pd
-from data_loader import load_data, load_scorecard
+from data_loader import load_data
 
 st.set_page_config(page_title="Court Mafia 2.0", layout="wide")
 
 st.title("Court Mafia 2.0")
 st.caption("Leaderboard + Fixtures")
 
-df = load_data()
-score_df = load_scorecard()
+# LOAD BOTH SHEETS FROM SAME FUNCTION
+schedule_df, score_df = load_data()
 
-df.columns = df.columns.str.strip()
+schedule_df.columns = schedule_df.columns.str.strip()
 score_df.columns = score_df.columns.str.strip()
 
 # -------- LEADERBOARD --------
@@ -29,8 +29,8 @@ player = st.text_input("🔍 Search Your Name")
 
 if player:
     st.subheader("🎯 My Matches")
-    my_df = df[
-        df[['Player 1','Player 2','Player 3','Player 4']].astype(str)
+    my_df = schedule_df[
+        schedule_df[['Player 1','Player 2','Player 3','Player 4']].astype(str)
         .apply(lambda x: x.str.contains(player, case=False, na=False))
         .any(axis=1)
     ]
@@ -41,7 +41,7 @@ if player:
 # -------- SCHEDULE --------
 st.subheader("📅 Schedule")
 
-for _, row in df.iterrows():
+for _, row in schedule_df.iterrows():
     scoreA = row.get('Team 1 Score', "")
     scoreB = row.get('Team 2 Score', "")
 

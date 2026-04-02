@@ -6,10 +6,9 @@ import os
 
 st.set_page_config(page_title="Court Mafia 2.0", layout="wide")
 
-# ---------- DARK MODE SAFE UI ----------
+# ---------- UI ----------
 st.markdown("""
 <style>
-/* Auto adapt text colors */
 .card {
     background-color: var(--secondary-background-color);
     padding: 16px;
@@ -17,29 +16,10 @@ st.markdown("""
     box-shadow: 0px 4px 10px rgba(0,0,0,0.08);
     margin-bottom: 12px;
 }
-
-.highlight {
-    border-left: 6px solid #1f7a6b;
-}
-
-.title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.subtitle {
-    font-size: 13px;
-    color: var(--text-color);
-    opacity: 0.7;
-}
-
-.score {
-    font-size: 22px;
-    font-weight: 700;
-    margin-top: 6px;
-    color: var(--text-color);
-}
+.highlight { border-left: 6px solid #1f7a6b; }
+.title { font-size: 18px; font-weight: 600; color: var(--text-color); }
+.subtitle { font-size: 13px; color: var(--text-color); opacity: 0.7; }
+.score { font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--text-color); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -54,8 +34,11 @@ with col2:
 
 # ---------- LOAD ----------
 df = load_data()
-df.columns = df.columns.str.strip()
 
+# FIX: replace deprecated applymap
+df = df.apply(lambda col: col.map(lambda x: x.strip() if isinstance(x, str) else x))
+
+# Ensure columns exist
 for col in ['Team 1 Score','Team 2 Score']:
     if col not in df.columns:
         df[col] = ""
@@ -77,8 +60,14 @@ venue = st.sidebar.multiselect("Venue", df['Venue'].dropna().unique())
 filtered = df.copy()
 
 if player:
+    player = player.strip().lower()
+
     filtered = filtered[
-        filtered['Match Details'].astype(str).str.contains(player, case=False, na=False)
+        filtered['Match Details'].astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 1', '').astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 2', '').astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 3', '').astype(str).str.lower().str.contains(player, na=False) |
+        filtered.get('Player 4', '').astype(str).str.lower().str.contains(player, na=False)
     ]
 
 if category:

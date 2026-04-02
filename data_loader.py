@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=20)
 def load_data():
     sheet_id = "130OAkdOXSpFTk3vnvdww0of5hM8ABd4XdGfWT0F9PmA"
     sheet_name = "Schedule"

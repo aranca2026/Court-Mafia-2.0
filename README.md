@@ -1,3 +1,1 @@
-# Court Mafia FINAL App
-
-Just upload all files to GitHub and deploy on Streamlit Cloud.
+Live score enabled using Team 1 Score & Team 2 Score.
